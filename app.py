@@ -12,13 +12,14 @@ import streamlit as st
 from core import llm
 from core import project as P
 from modules import (
-    m1_topic, m2_sources, m3_outline, m4_data, m5_drafter, m6_check, m7_export,
+    m1_topic, m15_validate, m2_sources, m3_outline, m4_data, m5_drafter, m6_check, m7_export,
 )
 
 st.set_page_config(page_title="졸업논문 작성 도우미", page_icon="🎓", layout="wide")
 
 MODULES = {
     "① 주제 발굴": m1_topic,
+    "①.5 주제 검증기": m15_validate,
     "② 자료·인용관리": m2_sources,
     "③ 골격 빌더": m3_outline,
     "④ 데이터 분석": m4_data,

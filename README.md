@@ -25,6 +25,7 @@
 | 모듈 | 기능 |
 |------|------|
 | ① **주제 발굴** | 2026 국제통상 이슈 기반 주제 후보 + 참신성·데이터확보·선행연구 점수화 |
+| ①.5 **주제 검증기** | OpenAlex(무료) 실연동 — **자료 확보 가능성** 점검 + 연도별 포화도/추세 + 유사 선행연구·유사도. 찾은 논문을 ②로 바로 추가 |
 | ② **자료·인용관리** | 출처 입력 → **각주(학과 규정) + APA 참고문헌** 자동 생성, 인용 ID 부여 |
 | ③ **골격 빌더** | 혼합형(정성+데이터) 학부논문 표준 골격, 본문 분량(20쪽) 게이지 |
 | ④ **데이터 분석** | CSV 업로드 → 추세/비교 그래프 + "데이터가 말하는 사실" 요약 |
@@ -86,7 +87,11 @@ thesis-helper/
 │  ├─ project.py           # project.json 상태 저장/불러오기 + 접속코드 분리
 │  ├─ llm.py               # provider-agnostic LLM 어댑터 (REST 기반, SDK 무의존)
 │  ├─ citation.py          # 각주 + APA 7th 포맷터
-│  └─ docx_footnotes.py    # 실제 OOXML 각주(footnote) 주입 엔진
+│  ├─ docx_footnotes.py    # 실제 OOXML 각주(footnote) 주입 엔진
+│  ├─ scholar.py           # OpenAlex/KCI 클라이언트 (재시도·캐시·polite pool)
+│  ├─ embeddings.py        # 유사도 백엔드 (sentence-transformers→TF-IDF→lexical 강등)
+│  ├─ topic_analysis.py    # 포화도·자료확보·참신성 판정 (순수 로직)
+│  └─ validate.py          # 주제 검증 실행기 (조립)
 ├─ modules/
 │  └─ m1_topic … m7_export # 7개 기능 모듈 (각자 render(project, cfg))
 ├─ projects/<space>/<name> # 프로젝트별 상태·그림 (gitignore, 접속코드로 격리)
@@ -133,6 +138,8 @@ python smoke_test.py
 - [x] 7개 모듈 MVP + 동국대 양식 `.docx` 내보내기
 - [x] provider-agnostic LLM 백엔드
 - [x] 접속코드 기반 프로젝트 분리
+- [x] 주제 검증기 — OpenAlex 실연동(포화도·유사도·자료확보 점검)
+- [ ] KCI/RISS 국문 논문 연동 강화
 - [ ] 출처 자동 수집(UN Comtrade / KITA 공개 API)
 - [ ] `.hwp` 내보내기
 - [ ] 인용 중복·교차참조 자동 점검
