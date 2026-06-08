@@ -42,66 +42,65 @@ def get_cfg() -> llm.LLMConfig:
 def sidebar_project():
     st.sidebar.title("🎓 졸업논문 도우미")
 
-    # --- 접속 코드 (간단한 프로젝트 분리) ---
-    code = st.sidebar.text_input(
-        "접속 코드", value=st.session_state.get("access_code", ""), type="password",
-        help="본인만 아는 코드를 정하세요. 같은 코드를 쓰는 사람끼리만 프로젝트가 공유됩니다(진짜 로그인은 아님).",
-    )
-    st.session_state.access_code = code
-    space = P.space_id(code)
-    if not code:
-        st.sidebar.warning("접속 코드를 입력해야 프로젝트가 본인 공간에 저장됩니다.")
+    # --- 모듈 내비게이션 (1차 메뉴 — 맨 위) ---
+    page = st.sidebar.radio("📂 단계 선택", list(MODULES.keys()))
+    st.sidebar.divider()
 
-    # 코드가 바뀌면 현재 프로젝트 비우기
-    if st.session_state.get("_space") != space:
-        st.session_state._space = space
-        st.session_state.pop("project", None)
+    # --- 접속 코드 + 프로젝트 (접이식) ---
+    with st.sidebar.expander("📁 프로젝트", expanded=True):
+        code = st.text_input(
+            "접속 코드", value=st.session_state.get("access_code", ""), type="password",
+            help="본인만 아는 코드를 정하세요. 같은 코드를 쓰는 사람끼리만 프로젝트가 공유됩니다(진짜 로그인은 아님).",
+        )
+        st.session_state.access_code = code
+        space = P.space_id(code)
+        if not code:
+            st.caption("⚠️ 접속 코드를 넣으면 작업이 본인 공간에 저장됩니다.")
 
-    # --- 프로젝트 선택/생성 ---
-    existing = P.list_projects(space)
-    mode = st.sidebar.radio("프로젝트", ["기존 열기", "새로 만들기"], horizontal=True)
-    if mode == "새로 만들기":
-        name = st.sidebar.text_input("새 프로젝트 이름", value="my-thesis")
-        if st.sidebar.button("생성"):
-            st.session_state.project = P.new_project(name, space)
-            st.rerun()
-    else:
-        if existing:
-            chosen = st.sidebar.selectbox("프로젝트 선택", existing)
-            if st.sidebar.button("열기"):
-                st.session_state.project = P.load(chosen, space)
+        if st.session_state.get("_space") != space:
+            st.session_state._space = space
+            st.session_state.pop("project", None)
+
+        existing = P.list_projects(space)
+        mode = st.radio("프로젝트", ["기존 열기", "새로 만들기"], horizontal=True)
+        if mode == "새로 만들기":
+            name = st.text_input("새 프로젝트 이름", value="my-thesis")
+            if st.button("생성"):
+                st.session_state.project = P.new_project(name, space)
                 st.rerun()
         else:
-            st.sidebar.info("이 코드로 저장된 프로젝트가 없습니다. '새로 만들기'를 선택하세요.")
+            if existing:
+                chosen = st.selectbox("프로젝트 선택", existing)
+                if st.button("열기"):
+                    st.session_state.project = P.load(chosen, space)
+                    st.rerun()
+            else:
+                st.info("이 코드로 저장된 프로젝트가 없습니다. '새로 만들기'를 선택하세요.")
 
-    if "project" not in st.session_state:
-        st.session_state.project = P.new_project("my-thesis", space)
+        if "project" not in st.session_state:
+            st.session_state.project = P.new_project("my-thesis", space)
+        st.caption(f"현재: **{st.session_state.project['name']}**")
 
-    st.sidebar.caption(f"현재: **{st.session_state.project['name']}**")
-    st.sidebar.divider()
+    # --- LLM 백엔드 (접이식, 기본 접힘) ---
+    with st.sidebar.expander("🔌 LLM 백엔드 (선택)", expanded=False):
+        st.session_state.llm_backend = st.selectbox(
+            "백엔드", llm.BACKENDS,
+            index=llm.BACKENDS.index(st.session_state.get("llm_backend", "template")),
+            help="template = 키 없이 동작(기본). 키는 세션에만 보관, 저장 안 됨.",
+        )
+        be = st.session_state.llm_backend
+        if be != "template":
+            d = llm.DEFAULTS.get(be, {})
+            if be != "local":
+                st.session_state.llm_key = st.text_input(
+                    "API Key", type="password", value=st.session_state.get("llm_key", ""))
+            st.session_state.llm_model = st.text_input(
+                "모델", value=st.session_state.get("llm_model", "") or d.get("model", ""))
+            st.session_state.llm_base = st.text_input(
+                "Base URL", value=st.session_state.get("llm_base", "") or d.get("base_url", ""))
+        st.caption("🟢 LLM 사용" if llm.is_enabled(get_cfg()) else "⚪ 템플릿 모드(LLM 미사용)")
 
-    # --- LLM 백엔드 (교체 가능) ---
-    st.sidebar.subheader("LLM 백엔드 (선택)")
-    st.session_state.llm_backend = st.sidebar.selectbox(
-        "백엔드", llm.BACKENDS,
-        index=llm.BACKENDS.index(st.session_state.get("llm_backend", "template")),
-        help="template = 키 없이 동작(기본). 키는 세션에만 보관, 저장 안 됨.",
-    )
-    be = st.session_state.llm_backend
-    if be != "template":
-        d = llm.DEFAULTS.get(be, {})
-        if be != "local":
-            st.session_state.llm_key = st.sidebar.text_input(
-                "API Key", type="password", value=st.session_state.get("llm_key", ""))
-        st.session_state.llm_model = st.sidebar.text_input(
-            "모델", value=st.session_state.get("llm_model", "") or d.get("model", ""))
-        st.session_state.llm_base = st.sidebar.text_input(
-            "Base URL", value=st.session_state.get("llm_base", "") or d.get("base_url", ""))
-    cfg = get_cfg()
-    st.sidebar.caption("🟢 LLM 사용" if llm.is_enabled(cfg) else "⚪ 템플릿 모드(LLM 미사용)")
-    st.sidebar.divider()
-
-    return st.sidebar.radio("모듈", list(MODULES.keys()))
+    return page
 
 
 def main():
