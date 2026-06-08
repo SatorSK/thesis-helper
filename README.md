@@ -11,6 +11,12 @@
 
 주제 발굴 · 인용 관리 · 골격 · 데이터 분석 · 단락 작성 · 자가 점검 · **동국대 양식 .docx 내보내기**
 
+![데모](docs/demo.gif)
+
+*주제 입력 → 후보 추천 → OpenAlex로 자료 확보·포화도 검증까지 (라이브 데모)*
+
+🔗 **[지금 써보기 — thesis-writer-dgu.streamlit.app](https://thesis-writer-dgu.streamlit.app)**
+
 </div>
 
 > [!IMPORTANT]
